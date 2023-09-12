@@ -1,0 +1,112 @@
+== Puede enumerar el nombre de la cuenta activa con este comando:
+	gcloud auth list
+
+== You can list the project ID with this command:
+	gcloud config list project
+
+
+=== Habilitar la API de administración de Cloud SQ
+=== Comandos
+	1.En Cloud Shell, habilita la API de administración de Cloud SQL:
+	gcloud services enable sqladmin.googleapis.com
+	
+	2.Confirma que la API de administración de Cloud SQL esté habilitada:
+	gcloud services list | grep sqladmin
+
+	3.Enumere las instancias de Cloud SQL:
+	gcloud sql instances list
+
+== Create a Cloud SQL instance
+== Comandos
+	1.crear la intancia
+	gcloud sql instances create guestbook --region=us-central1
+
+== Crear una base de datos en la instancia de Cloud SQL
+== comandos
+	1.Cree una messagesbase de datos en la instancia de MySQL:
+	gcloud sql databases create messages --instance guestbook
+
+	2.Utilice gcloudCLI para conectarse a la base de datos:
+	gcloud sql connect guestbook
+	dar enter para dejar la base contraseña basia
+	
+	3.Enumere las bases de datos:
+	show databases;
+	
+	4.poner en uso l abase de datos messages
+	use messages
+	
+	5.crear tabla
+	CREATE TABLE guestbook_message (
+  	id BIGINT NOT NULL AUTO_INCREMENT,
+  	name CHAR(128) NOT NULL,
+  	message CHAR(255),
+  	image_uri CHAR(255),
+  	PRIMARY KEY (id)
+	);
+	
+	6.Salga de la utilidad de administración MySQL ejecutando el siguiente comando:
+	exit
+
+== Tarea 3. Utilice Spring para agregar compatibilidad con Cloud SQL a su aplicación
+== Agregue el iniciador Spring Cloud GCP Cloud SQL
+	1.Edite el guestbook-service/pom.xmlarchivo en el editor de código de Cloud Shell o en el editor de Shell de su elección.
+	2.Inserte una dependencia adicional spring-cloud-gcp-starter-sql-mysqljusto antes de la </dependencies>etiqueta de cierre:
+	<dependency>
+         	<groupId>org.springframework.cloud</groupId>
+         	<artifactId>spring-cloud-gcp-starter-sql-mysql</artifactId>
+      	</dependency>
+
+== Deshabilite Cloud SQL en el perfil predeterminado
+	1.En el editor de código de Cloud Shell, abra guestbook-service/src/main/resources/application.properties.
+	2.Agregue la siguiente configuración de propiedad:
+	spring.cloud.gcp.sql.enabled=false
+
+
+== Tarea 4. Configurar un perfil de aplicación para usar Cloud SQL
+== Configurar un perfil en la nube
+	1. En Cloud Shell, busque el nombre de la conexión de la instancia:
+	gcloud sql instances describe guestbook --format='value(connectionName)'
+	2.En el editor de código de Cloud Shell, cree un archivo llamado application-cloud.properties
+	en el directorio service/src/main/resources
+
+	3.En el archivo creado pegue lo siguiente
+	spring.cloud.gcp.sql.enabled=true
+	spring.cloud.gcp.sql.database-name=messages
+	spring.cloud.gcp.sql.instance-connection-name=YOUR_INSTANCE_CONNECTION_NAME
+
+== Configurar el grupo de conexiones
+	1. Agregue la siguiente propiedad al archivo guestbook-service/src/main/resources/application-cloud.properties
+	spring.datasource.hikari.maximum-pool-size=5
+
+
+== Pruebe el servicio backend que se ejecuta en Cloud SQL
+	1. En Cloud Shell, cambie al guestbook-servicedirectorio:
+	cd ~/guestbook-service
+
+	2. Ejecute una prueba con el perfil predeterminado y asegúrese de que no haya fallas:
+	./mvnw test
+
+	3. Start the Guestbook Service with the cloud profile:
+	./mvnw spring-boot:run \
+  	-Dspring-boot.run.jvmArguments="-Dspring.profiles.active=cloud"
+	
+	4. Durante el inicio de la aplicación, confirme que ve los registros de conexión relacionados con CloudSQL.
+
+	5. En una nueva pestaña de Cloud Shell, realiza algunas llamadas usando curl:
+	curl -XPOST -H "content-type: application/json" \
+  	-d '{"name": "Ray", "message": "Hello CloudSQL"}' \
+ 	http://localhost:8081/guestbookMessages
+
+	6 .También puede enumerar todos los mensajes:
+	url http://localhost:8081/guestbookMessages
+
+	7. Utilice el cliente de Cloud SQL para validar que los registros de mensajes se hayan agregado a la base de datos:
+	gcloud sql connect guestbook
+	
+	8. presionar enter
+	
+	9. consulta a la tabla guestbook_message
+	use messages;
+	select * from guestbook_message;
+	
